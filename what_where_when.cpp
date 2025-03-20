@@ -37,11 +37,21 @@ int main() {
     int playerScore = 0, audienceScore = 0;
 
     while (playerScore < WIN_SCORE && audienceScore < WIN_SCORE) {
-        // Ввод смещения
+        // Ввод смещения с валидацией
         int offset;
-        cout << "Current sector: " << currentSector + 1 << endl;
-        cout << "Enter offset: ";
-        cin >> offset;
+        while (true) {
+            cout << "Current sector: " << currentSector + 1 << endl;
+            cout << "Enter offset: ";
+            if (!(cin >> offset)) {
+                cout << "Invalid input. Please enter a number." << endl;
+                cin.clear();
+                cin.ignore(10000, '\n');
+            } else if (offset < -TOTAL_SECTORS || offset > TOTAL_SECTORS) {
+                cout << "Offset should be between -" << TOTAL_SECTORS << " and " << TOTAL_SECTORS << "." << endl;
+            } else {
+                break;
+            }
+        }
 
         // Вычисление нового сектора
         int activeSector = getActiveSector(currentSector, offset, usedSectors);
@@ -60,7 +70,7 @@ int main() {
         
         cout << "\nQuestion: " << readFileContent(questionFile) << endl;
         
-        // Проверка ответа
+        // Проверка ответа с учетом регистра
         string correctAnswer = readFileContent(answerFile);
         correctAnswer.erase(remove(correctAnswer.begin(), correctAnswer.end(), '\n'), correctAnswer.end());
         
@@ -68,6 +78,10 @@ int main() {
         string userAnswer;
         cin.ignore();
         getline(cin, userAnswer);
+        
+        // Приведение к нижнему регистру для сравнения
+        transform(userAnswer.begin(), userAnswer.end(), userAnswer.begin(), ::tolower);
+        transform(correctAnswer.begin(), correctAnswer.end(), correctAnswer.begin(), ::tolower);
         
         // Сравнение ответов
         if (userAnswer == correctAnswer) {
