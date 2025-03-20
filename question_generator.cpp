@@ -40,32 +40,38 @@ vector<QuestionAnswer> readBase(const string& filename) {
 
 // Функция для записи вопросов и ответов в файлы
 void writeFiles(const vector<QuestionAnswer>& base) {
+    cout << "Начинаем запись файлов..." << endl;
+    // Создаем копию вектора для перемешивания
+    vector<QuestionAnswer> shuffledBase = base;
+
     random_device rd;
     mt19937 g(rd());
-    shuffle(base.begin(), base.end(), g);
+    shuffle(shuffledBase.begin(), shuffledBase.end(), g);
 
-    if (base.size() < 13) {
-        cout << "Not enough questions in the base." << endl;
+    if (shuffledBase.size() < 13) {
+        cout << "Недостаточно вопросов в базе." << endl;
         return;
     }
 
     for (int i = 0; i < 13; ++i) {
         string questionFile = "question_" + to_string(i + 1) + ".txt";
         string answerFile = "answer_" + to_string(i + 1) + ".txt";
+        cout << "Создание файлов: " << questionFile << " и " << answerFile << endl;
 
         ofstream qFile(questionFile);
         ofstream aFile(answerFile);
 
         if (!qFile.is_open() || !aFile.is_open()) {
-            cout << "Error opening file for writing." << endl;
+            cout << "Ошибка при открытии файла для записи." << endl;
             return;
         }
 
-        qFile << base[i].question << endl;
-        aFile << base[i].answer << endl;
+        qFile << shuffledBase[i].question << endl;
+        aFile << shuffledBase[i].answer << endl;
 
         qFile.close();
         aFile.close();
+        cout << "Файлы созданы успешно." << endl;
     }
 }
 

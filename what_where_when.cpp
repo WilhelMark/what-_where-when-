@@ -2,101 +2,92 @@
 #include <fstream>
 #include <vector>
 #include <string>
+#include <set>
 #include <algorithm>
 
 using namespace std;
 
-const int TOTAL_SECTORS = 13;
-const int WIN_SCORE = 6;
+// Функция для вычисления нового активного сектора
+int getNextActiveSector(int currentSector, int offset, const set<int>& playedSectors) {
+    int newSector = (currentSector + offset) % 13;
+    if (newSector == 0) newSector = 13;
 
-// Функция для вычисления активного сектора с учетом использованных
-int getActiveSector(int current, int offset, vector<bool>& used) {
-    int attempts = 0;
-    int newSector = (current + offset) % TOTAL_SECTORS;
-    
-    // Ищем первый неиспользованный сектор
-    while (used[newSector] && attempts < TOTAL_SECTORS) {
-        newSector = (newSector + 1) % TOTAL_SECTORS;
-        attempts++;
+    // Ищем следующий несыгранный сектор
+    while (playedSectors.find(newSector) != playedSectors.end()) {
+        newSector = (newSector % 13) + 1;
     }
-    return (attempts == TOTAL_SECTORS) ? -1 : newSector;
-}
-
-// Чтение содержимого файла
-string readFileContent(const string& filename) {
-    ifstream file(filename);
-    if (!file.is_open()) return "Error reading file";
-    string content((istreambuf_iterator<char>(file)), {});
-    file.close();
-    return content;
+    return newSector;
 }
 
 int main() {
-    vector<bool> usedSectors(TOTAL_SECTORS, false);
-    int currentSector = 0;
-    int playerScore = 0, audienceScore = 0;
+    vector<string> questions(13);
+    vector<string> answers(13);
+    set<int> playedSectors; // Отслеживаем сыгранные сектора
+    int playerScore = 0, viewerScore = 0;
+    int currentSector = 1; // Начинаем с сектора 1
 
-    while (playerScore < WIN_SCORE && audienceScore < WIN_SCORE) {
-        // Ввод смещения с валидацией
-        int offset;
-        while (true) {
-            cout << "Current sector: " << currentSector + 1 << endl;
-            cout << "Enter offset: ";
-            if (!(cin >> offset)) {
-                cout << "Invalid input. Please enter a number." << endl;
-                cin.clear();
-                cin.ignore(10000, '\n');
-            } else if (offset < -TOTAL_SECTORS || offset > TOTAL_SECTORS) {
-                cout << "Offset should be between -" << TOTAL_SECTORS << " and " << TOTAL_SECTORS << "." << endl;
-            } else {
-                break;
-            }
-        }
-
-        // Вычисление нового сектора
-        int activeSector = getActiveSector(currentSector, offset, usedSectors);
-        if (activeSector == -1) {
-            cout << "All sectors used!" << endl;
-            break;
-        }
-
-        // Помечаем сектор как использованный
-        usedSectors[activeSector] = true;
-        currentSector = activeSector;
-
-        // Чтение вопроса и ответа
-        string questionFile = "question_" + to_string(activeSector + 1) + ".txt";
-        string answerFile = "answer_" + to_string(activeSector + 1) + ".txt";
-        
-        cout << "\nQuestion: " << readFileContent(questionFile) << endl;
-        
-        // Проверка ответа с учетом регистра
-        string correctAnswer = readFileContent(answerFile);
-        correctAnswer.erase(remove(correctAnswer.begin(), correctAnswer.end(), '\n'), correctAnswer.end());
-        
-        cout << "Your answer: ";
-        string userAnswer;
-        cin.ignore();
-        getline(cin, userAnswer);
-        
-        // Приведение к нижнему регистру для сравнения
-        transform(userAnswer.begin(), userAnswer.end(), userAnswer.begin(), ::tolower);
-        transform(correctAnswer.begin(), correctAnswer.end(), correctAnswer.begin(), ::tolower);
-        
-        // Сравнение ответов
-        if (userAnswer == correctAnswer) {
-            playerScore++;
-            cout << "Correct! Player score: " << playerScore << endl;
+    // Загрузка вопросов и ответов из файлов
+    for (int i = 1; i <= 13; ++i) {
+        ifstream questionFile("question_" + to_string(i) + ".txt");
+        ifstream answerFile("answer_" + to_string(i) + ".txt");
+        if (questionFile && answerFile) {
+            getline(questionFile, questions[i - 1]);
+            getline(answerFile, answers[i - 1]);
         } else {
-            audienceScore++;
-            cout << "Wrong! Audience score: " << audienceScore << endl;
+            cout << "Ошибка при загрузке файлов для сектора " << i << endl;
+            return 1;
         }
     }
 
-    // Определение победителя
-    cout << "\nFinal result:\n";
-    cout << "Player: " << playerScore << "\nAudience: " << audienceScore << endl;
-    cout << "Winner: " << (playerScore >= WIN_SCORE ? "Player" : "Audience") << endl;
+    // Основной цикл игры
+    while (playerScore < 6 && viewerScore < 6) {
+        // Вывод текущих счетов
+        cout << "Счет игрока: " << playerScore << " | Счет зрителей: " << viewerScore << endl;
+
+        // Ввод смещения от игрока
+        int offset;
+        cout << "Введите смещение для вращения колеса: ";
+        cin >> offset;
+
+        // Вычисление нового активного сектора
+        int newSector = getNextActiveSector(currentSector, offset, playedSectors);
+        cout << "Активный сектор: " << newSector << endl;
+
+        // Помечаем сектор как сыгранный
+        playedSectors.insert(newSector);
+        currentSector = newSector;
+
+        // Вывод вопроса
+        cout << "Вопрос: " << questions[newSector - 1] << endl;
+
+        // Ввод ответа игрока
+        string playerAnswer;
+        cin.ignore(); // Игнорируем оставшийся символ перевода строки
+        getline(cin, playerAnswer);
+
+        // Удаление пробелов и приведение к нижнему регистру для сравнения
+        playerAnswer.erase(remove(playerAnswer.begin(), playerAnswer.end(), ' '), playerAnswer.end());
+        string correctAnswer = answers[newSector - 1];
+        correctAnswer.erase(remove(correctAnswer.begin(), correctAnswer.end(), ' '), correctAnswer.end());
+        transform(playerAnswer.begin(), playerAnswer.end(), playerAnswer.begin(), ::tolower);
+        transform(correctAnswer.begin(), correctAnswer.end(), correctAnswer.begin(), ::tolower);
+
+        // Проверка ответа
+        if (playerAnswer == correctAnswer) {
+            cout << "Правильный ответ!" << endl;
+            playerScore++;
+        } else {
+            cout << "Неправильный ответ! Правильный ответ был: " << answers[newSector - 1] << endl;
+            viewerScore++;
+        }
+    }
+
+    // Вывод победителя
+    if (playerScore == 6) {
+        cout << "Поздравляем! Игрок выиграл!" << endl;
+    } else {
+        cout << "Зрители выиграли! Удачи в следующий раз!" << endl;
+    }
 
     return 0;
 }
