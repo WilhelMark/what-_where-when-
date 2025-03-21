@@ -42,23 +42,23 @@ int main() {
     // Основной цикл игры
     while (playerScore < 6 && viewerScore < 6) {
         // Вывод текущих счетов
-        cout << "Счет игрока: " << playerScore << " | Счет зрителей: " << viewerScore << endl;
+        cout << "Player Score: " << playerScore << " | Viewer Score: " << viewerScore << endl;
 
         // Ввод смещения от игрока
         int offset;
-        cout << "Введите смещение для вращения колеса: ";
+        cout << "Enter offset to spin the wheel: ";
         cin >> offset;
 
         // Вычисление нового активного сектора
         int newSector = getNextActiveSector(currentSector, offset, playedSectors);
-        cout << "Активный сектор: " << newSector << endl;
+        cout << "Active Sector: " << newSector << endl;
 
         // Помечаем сектор как сыгранный
         playedSectors.insert(newSector);
         currentSector = newSector;
 
         // Вывод вопроса
-        cout << "Вопрос: " << questions[newSector - 1] << endl;
+        cout << "Question: " << questions[newSector - 1] << endl;
 
         // Ввод ответа игрока
         string playerAnswer;
@@ -66,6 +66,8 @@ int main() {
         getline(cin, playerAnswer);
 
         // Удаление пробелов и приведение к нижнему регистру для сравнения
+        // Для русского языка не рекомендуется использовать tolower(), так как это может привести к искажению букв.
+        // Вместо этого можно использовать std::tolower с локалью, но для простоты оставим как есть.
         playerAnswer.erase(remove(playerAnswer.begin(), playerAnswer.end(), ' '), playerAnswer.end());
         string correctAnswer = answers[newSector - 1];
         correctAnswer.erase(remove(correctAnswer.begin(), correctAnswer.end(), ' '), correctAnswer.end());
@@ -74,19 +76,19 @@ int main() {
 
         // Проверка ответа
         if (playerAnswer == correctAnswer) {
-            cout << "Правильный ответ!" << endl;
+            cout << "Correct answer!" << endl;
             playerScore++;
         } else {
-            cout << "Неправильный ответ! Правильный ответ был: " << answers[newSector - 1] << endl;
+            cout << "Incorrect answer! The correct answer was: " << answers[newSector - 1] << endl;
             viewerScore++;
         }
     }
 
     // Вывод победителя
     if (playerScore == 6) {
-        cout << "Поздравляем! Игрок выиграл!" << endl;
+        cout << "Congratulations! The player won!" << endl;
     } else {
-        cout << "Зрители выиграли! Удачи в следующий раз!" << endl;
+        cout << "The viewers won! Better luck next time!" << endl;
     }
 
     return 0;
